@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
+    <AvailableItemName Include="VertexShader">
+      <Targets>VertexShaderTarget_BIN</Targets>
+    </AvailableItemName>
+		<ShaderInclude Remove="@(ShaderInclude)"/>
+		<ShaderInclude Include="$(ProjectDir)..\..\..\src\$([MSBuild]::MakeRelative($(SolutionDir), $(ProjectDir)))**\*.inl"/>
+  </ItemGroup>
+	
+  <UsingTask
+    TaskName="VertexShader"
+    TaskFactory="XamlTaskFactory"
+    AssemblyName="Microsoft.Build.Tasks.v4.0">
+    <Task>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</Task>
+  </UsingTask>
+
+	<!--Print start message-->
+	<Target Name="VertexShaderTarget_Start"
+    BeforeTargets="$(VertexShaderBeforeTargets)"
+    AfterTargets="$(VertexShaderAfterTargets)"
+    Condition="'@(VertexShader)' != ''"
+    DependsOnTargets="$(VertexShaderDependsOn)"
+		Outputs="%(VertexShader.Outputs_BIN);%(VertexShader.Outputs_JSON);%(VertexShader.Outputs_DXC)"
+    Inputs="%(VertexShader.Identity);@(ShaderInclude)">
+		<Message Importance="High" Text="%(VertexShader.Filename)%(VertexShader.Extension)" />
+	</Target>
+
+	<!--JSON Target-->
+	<Target Name="VertexShaderTarget_JSON"
+    BeforeTargets="$(VertexShaderBeforeTargets)"
+    AfterTargets="$(VertexShaderAfterTargets)"
+    Condition="'@(VertexShader)' != ''"
+    DependsOnTargets="$(VertexShaderDependsOn);VertexShaderTarget_Start"
+		Outputs="%(VertexShader.Outputs_JSON)"
+    Inputs="%(VertexShader.Identity);@(ShaderInclude)">
+
+		<ItemGroup Condition="'@(SelectedFiles)' != ''">
+			<VertexShader Condition="'%(Identity)' != '@(SelectedFiles)'" Remove="@(VertexShader)" />
+		</ItemGroup>
+		
+		<Delete	Condition="'%(VertexShader.ExcludedFromBuild)' != 'true'" Files="%(VertexShader.Outputs_JSON)" />
+
+		<VertexShader Condition="'@(VertexShader)' != '' and '%(VertexShader.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(VertexShader.CommandLineTemplate_JSON)"
+      Exec="%(VertexShader.Exec_JSON)"
+      ExecArgu="%(VertexShader.ExecArgu_JSON)"
+			Inputs="%(VertexShader.Identity)"
+			Outputs="%(VertexShader.Outputs_JSON)"/>
+	</Target>
+
+	<!--DXC Target-->
+  <Target Name="VertexShaderTarget_DXC"
+    BeforeTargets="$(VertexShaderBeforeTargets)"
+    AfterTargets="$(VertexShaderAfterTargets)"
+    Condition="'@(VertexShader)' != ''"
+    DependsOnTargets="$(VertexShaderDependsOn);VertexShaderTarget_Start"
+		Outputs="%(VertexShader.Outputs_DXC)"
+    Inputs="%(VertexShader.Identity);@(ShaderInclude)">
+
+		<ItemGroup Condition="'@(SelectedFiles)' != ''">
+			<VertexShader Condition="'%(Identity)' != '@(SelectedFiles)'" Remove="@(VertexShader)"/>
+    </ItemGroup>
+		
+    <Delete	Condition="'%(VertexShader.ExcludedFromBuild)' != 'true'" Files="%(VertexShader.Outputs_DXC)" />
+
+		<VertexShader Condition="'@(VertexShader)' != '' and '%(VertexShader.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(VertexShader.CommandLineTemplate_DXC)"
+      Exec="%(VertexShader.Exec_DXC)"
+      ExecArgu="%(VertexShader.ExecArgu_DXC)"
+			Inputs="%(VertexShader.Identity)"
+			Outputs="%(VertexShader.Outputs_DXC)"/>
+  </Target>
+
+	<!--BIN Target-->
+	<Target Name="VertexShaderTarget_BIN"
+    BeforeTargets="$(VertexShaderBeforeTargets)"
+    AfterTargets="$(VertexShaderAfterTargets)"
+    Condition="'@(VertexShader)' != ''"
+    DependsOnTargets="$(VertexShaderDependsOn);VertexShaderTarget_DXC;VertexShaderTarget_JSON"
+		Outputs="%(VertexShader.Outputs_BIN)"
+    Inputs="%(VertexShader.Outputs_JSON);@(ShaderInclude)">
+
+		<!--Item definition-->
+		<ItemGroup Condition="'@(SelectedFiles)' != ''">
+			<VertexShader Condition="'%(Identity)' != '@(SelectedFiles)'" Remove="@(VertexShader)" />
+		</ItemGroup>
+		<ItemGroup>
+			<AbsolutePath Remove="@(AbsolutePath)"/>
+			<AbsolutePath Include="%(VertexShader.ShaderOutputDir)$([MSBuild]::MakeRelative( $(ProjectDir)..\..\..\src\%(VertexShader.ProjectRelativeDir), $(ProjectDir)%(VertexShader.RelativeDir) ))"/>
+
+			<VertexShader_tlog
+        Include="%(VertexShader.Outputs_BIN);%(VertexShader.Outputs_JSON);%(VertexShader.Outputs_DXC)"
+        Condition="'%(VertexShader.Outputs_BIN)' != '' and '%(VertexShader.ExcludedFromBuild)' != 'true'">
+				<Source>@(VertexShader, '|')</Source>
+				<Inputs>@(ShaderInclude->'%(Fullpath)', ';')</Inputs>
+			</VertexShader_tlog>
+		</ItemGroup>
+
+		<!--load read/write tlog-->
+		<ReadLinesFromFile File="$(TLogLocation)$(ProjectName).write.1.tlog" >
+			<Output TaskParameter="Lines" ItemName="LinesFromTLog_write"/>
+		</ReadLinesFromFile>
+		<ReadLinesFromFile File="$(TLogLocation)$(ProjectName).read.1.tlog" >
+			<Output TaskParameter="Lines" ItemName="LinesFromTLog_read"/>
+		</ReadLinesFromFile>
+
+		<!--store read/write tlog content to variables-->
+		<PropertyGroup>
+			<!--read/write tlog content-->
+			<TLog_write>@(LinesFromTLog_write)</TLog_write>
+			<TLog_read>@(LinesFromTLog_read)</TLog_read>
+
+			<!--new read/write line that will be writen to tlog-->
+			<TLog_writelines>^$(ProjectDir)%(VertexShader_tlog.Source);@(VertexShader_tlog->'%(Fullpath)')</TLog_writelines>
+			<TLog_readlines>^$(ProjectDir)%(VertexShader_tlog.Source);%(VertexShader_tlog.Inputs)</TLog_readlines>
+		</PropertyGroup>
+
+		<!--Save read/write tlog-->
+		<WriteLinesToFile	Condition="'@(VertexShader_tlog)' != '' and '%(VertexShader_tlog.ExcludedFromBuild)' != 'true' and !$(TLog_write.Contains( '$(TLog_writelines)' ) )"
+      File="$(TLogLocation)$(ProjectName).write.1.tlog"
+      Lines="$(TLog_writelines)" />
+		<WriteLinesToFile	Condition="'@(VertexShader_tlog)' != '' and '%(VertexShader_tlog.ExcludedFromBuild)' != 'true' and !$(TLog_read.Contains( '$(TLog_readlines)' ) )"
+      File="$(TLogLocation)$(ProjectName).read.1.tlog"
+      Lines="$(TLog_readlines)" />
+
+		<!--compile file-->
+		<VertexShader Condition="'@(VertexShader)' != '' and '%(VertexShader.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(VertexShader.CommandLineTemplate_BIN)"
+      Exec="%(VertexShader.Exec_BIN)"
+      ExecArgu="%(VertexShader.ExecArgu_BIN)"
+			Inputs="%(VertexShader.Outputs_JSON)"
+			Outputs="%(VertexShader.Outputs_BIN)"/>
+
+		<!--create output directory and copy from bin\ to outDir\-->
+		<Copy SourceFiles="%(VertexShader.Outputs_BIN)" DestinationFolder="@(AbsolutePath)"/>
+		<Message Importance="High" Text="$(ProjectName).vcxproj -> @(AbsolutePath)%(VertexShader.OutputFileName_BIN)" />
+
+	</Target>
+</Project>

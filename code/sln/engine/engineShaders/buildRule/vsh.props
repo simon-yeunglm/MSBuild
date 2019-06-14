@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup
+    Condition="'$(VertexShaderBeforeTargets)' == '' and '$(VertexShaderAfterTargets)' == '' and '$(ConfigurationType)' != 'Makefile'">
+		<VertexShaderBeforeTargets>Midl</VertexShaderBeforeTargets>
+    <VertexShaderAfterTargets>CustomBuild</VertexShaderAfterTargets>
+  </PropertyGroup>
+	
+  <PropertyGroup>
+		<VertexShaderDependsOn
+      Condition="'$(ConfigurationType)' != 'Makefile'">_SelectedFiles;$(VertexShaderDependsOn)</VertexShaderDependsOn>
+  </PropertyGroup>
+	
+  <ItemDefinitionGroup>
+		<VertexShader>
+
+			<!--JSON-->
+			<OutputFileName_JSON>%(FileName).vjs</OutputFileName_JSON>
+			<Outputs_JSON>$(IntDir)%(OutputFileName_JSON)</Outputs_JSON>
+			<Exec_JSON>$(SolutionDir)..\util\bin\$(PlatformShortName)\shaderCompiler.exe</Exec_JSON>
+			<ExecArgu_JSON>main</ExecArgu_JSON>
+			<CommandLineTemplate_JSON>[Exec] [ExecArgu] [Inputs] [Outputs]</CommandLineTemplate_JSON>
+			<ExecutionDescription_JSON>Reflect Vertex Shader</ExecutionDescription_JSON>
+
+			<!--DXC-->
+			<OutputFileName_DXC>%(FileName).vbj</OutputFileName_DXC>
+			<Outputs_DXC>$(IntDir)%(OutputFileName_DXC)</Outputs_DXC>
+			<Exec_DXC>$(SolutionDir)..\util\bin\$(PlatformShortName)\dxc.exe</Exec_DXC>
+			<ExecArgu_DXC Condition="'$(Configuration)' == 'Debug'"		>/nologo /T vs_6_2 /E main /Zpc /Zi /Fo</ExecArgu_DXC>
+			<ExecArgu_DXC Condition="!('$(Configuration)' == 'Debug')"	>/nologo /T vs_6_2 /E main /Zpc /Fo</ExecArgu_DXC>
+			<CommandLineTemplate_DXC>[Exec] [ExecArgu] [Outputs] [Inputs]</CommandLineTemplate_DXC>
+			<ExecutionDescription_DXC>Compile Vertex Shader</ExecutionDescription_DXC>
+
+			<!--BIN-->
+			<OutputFileName_BIN>%(FileName).vso</OutputFileName_BIN>
+			<Outputs_BIN>$(OutDir)%(OutputFileName_BIN)</Outputs_BIN>
+			<Exec_BIN>$(SolutionDir)..\util\bin\$(PlatformShortName)\dataBuilder.exe</Exec_BIN>
+			<ExecArgu_BIN>-importShader</ExecArgu_BIN>
+			<CommandLineTemplate_BIN>[Exec] [ExecArgu] [Inputs] [Outputs]</CommandLineTemplate_BIN>
+			<ExecutionDescription_BIN>Pack Vertex Shader</ExecutionDescription_BIN>
+
+			<ShaderOutputDir>$(SolutionDir)..\..\assets\package\engine\shaders\</ShaderOutputDir>
+			<ProjectRelativeDir>$([MSBuild]::MakeRelative($(SolutionDir), $(ProjectDir)))</ProjectRelativeDir>
+			
+		</VertexShader>
+  </ItemDefinitionGroup>
+</Project>

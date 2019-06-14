@@ -1,0 +1,49 @@
+
+// by simon yeung, 26/05/2019
+// all rights reserved
+
+#include "../include/typedef.inl"
+
+struct PSInput
+{
+	float4 pos		: SV_POSITION;
+	float3 posWS	: POS_WORLD;
+	float3 nor		: NORMAL;
+	float3 biNor	: BINORMAL;
+	float3 tan		: TANGENT;
+	float2 uv		: UV0;
+};
+
+struct PSOutput
+{
+	float4 baseColor	: SV_TARGET0;
+	float4 normalWS		: SV_TARGET1;
+};
+
+Texture2D	baseColorMap: register(t0, SHADER_PER_DRAW_SRV_PS_ONLY_SPACE);
+Texture2D	normalMap	: register(t1, SHADER_PER_DRAW_SRV_PS_ONLY_SPACE);
+
+DECLARE_SAMPLER_STATE
+
+PSOutput main(PSInput input_ps)
+{
+	float3 normalMapTS= normalMap.Sample(samplerPointWrap, input_ps.uv).xyz;
+	normalMapTS= mad(normalMapTS, 2.0, -1.0);
+	normalMapTS= normalize(normalMapTS);
+	
+	float3 t= normalize(input_ps.tan	);
+	float3 b= normalize(input_ps.biNor	);
+	float3 n= normalize(input_ps.nor	);
+	
+    float3x3 tbn= float3x3(t, b, n);
+    float3 normalWS= mul(normalMapTS, tbn);
+	normalWS	= mad(normalWS, 0.5, 0.5);
+
+	float4	texColor= baseColorMap.Sample(samplerPointWrap, input_ps.uv);
+
+	PSOutput result;
+	result.baseColor= texColor;
+	result.normalWS	= float4(normalWS.xzy, 1.0f);
+	return result;
+}
+

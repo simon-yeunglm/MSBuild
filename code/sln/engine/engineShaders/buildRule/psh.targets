@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
+    <AvailableItemName Include="PixelShader">
+      <Targets>PixelShaderTarget_BIN</Targets>
+    </AvailableItemName>
+		<ShaderInclude Remove="@(ShaderInclude)"/>
+		<ShaderInclude Include="$(ProjectDir)..\..\..\src\$([MSBuild]::MakeRelative($(SolutionDir), $(ProjectDir)))**\*.inl"/>
+  </ItemGroup>
+	
+  <UsingTask
+    TaskName="PixelShader"
+    TaskFactory="XamlTaskFactory"
+    AssemblyName="Microsoft.Build.Tasks.v4.0">
+    <Task>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</Task>
+  </UsingTask>
+
+	<!--Print start message-->
+	<Target Name="PixelShaderTarget_Start"
+    BeforeTargets="$(PixelShaderBeforeTargets)"
+    AfterTargets="$(PixelShaderAfterTargets)"
+    Condition="'@(PixelShader)' != ''"
+    DependsOnTargets="$(PixelShaderDependsOn)"
+		Outputs="%(PixelShader.Outputs_BIN);%(PixelShader.Outputs_JSON);%(PixelShader.Outputs_DXC)"
+    Inputs="%(PixelShader.Identity);@(ShaderInclude)">
+		<Message Importance="High" Text="%(PixelShader.Filename)%(PixelShader.Extension)" />
+	</Target>
+
+	<!--JSON Target-->
+	<Target Name="PixelShaderTarget_JSON"
+    BeforeTargets="$(PixelShaderBeforeTargets)"
+    AfterTargets="$(PixelShaderAfterTargets)"
+    Condition="'@(PixelShader)' != ''"
+    DependsOnTargets="$(PixelShaderDependsOn);PixelShaderTarget_Start"
+		Outputs="%(PixelShader.Outputs_JSON)"
+    Inputs="%(PixelShader.Identity);@(ShaderInclude)">
+
+		<ItemGroup Condition="'@(SelectedFiles)' != ''">
+			<PixelShader Condition="'%(Identity)' != '@(SelectedFiles)'" Remove="@(PixelShader)"  />
+		</ItemGroup>
+
+		<Delete	Condition="'%(PixelShader.ExcludedFromBuild)' != 'true'" Files="%(PixelShader.Outputs_JSON)" />
+
+		<PixelShader Condition="'@(PixelShader)' != '' and '%(PixelShader.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(PixelShader.CommandLineTemplate_JSON)"
+      Exec="%(PixelShader.Exec_JSON)"
+      ExecArgu="%(PixelShader.ExecArgu_JSON)"
+			Inputs="%(PixelShader.Identity)"
+			Outputs="%(PixelShader.Outputs_JSON)"/>
+	</Target>
+
+	<!--DXC Target-->
+  <Target Name="PixelShaderTarget_DXC"
+    BeforeTargets="$(PixelShaderBeforeTargets)"
+    AfterTargets="$(PixelShaderAfterTargets)"
+    Condition="'@(PixelShader)' != ''"
+    DependsOnTargets="$(PixelShaderDependsOn);PixelShaderTarget_Start"
+		Outputs="%(PixelShader.Outputs_DXC)"
+    Inputs="%(PixelShader.Identity);@(ShaderInclude)">
+
+		<ItemGroup Condition="'@(SelectedFiles)' != ''">
+			<PixelShader Condition="'%(Identity)' != '@(SelectedFiles)'"  Remove="@(PixelShader)"/>
+    </ItemGroup>
+
+    <Delete	Condition="'%(PixelShader.ExcludedFromBuild)' != 'true'" Files="%(PixelShader.Outputs_DXC)" />
+
+		<PixelShader Condition="'@(PixelShader)' != '' and '%(PixelShader.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(PixelShader.CommandLineTemplate_DXC)"
+      Exec="%(PixelShader.Exec_DXC)"
+      ExecArgu="%(PixelShader.ExecArgu_DXC)"
+			Inputs="%(PixelShader.Identity)"
+			Outputs="%(PixelShader.Outputs_DXC)"/>
+  </Target>
+
+	<!--BIN Target-->
+	<Target Name="PixelShaderTarget_BIN"
+    BeforeTargets="$(PixelShaderBeforeTargets)"
+    AfterTargets="$(PixelShaderAfterTargets)"
+    Condition="'@(PixelShader)' != ''"
+    DependsOnTargets="$(PixelShaderDependsOn);PixelShaderTarget_DXC;PixelShaderTarget_JSON"
+		Outputs="%(PixelShader.Outputs_BIN)"
+    Inputs="%(PixelShader.Outputs_JSON);@(ShaderInclude)">
+
+		<!--Item definition-->
+		<ItemGroup Condition="'@(SelectedFiles)' != ''">
+			<PixelShader Condition="'%(Identity)' != '@(SelectedFiles)'" Remove="@(PixelShader)" />
+		</ItemGroup>
+		<ItemGroup>
+			<AbsolutePath Remove="@(AbsolutePath)"/>
+			<AbsolutePath Include="%(PixelShader.ShaderOutputDir)$([MSBuild]::MakeRelative( $(ProjectDir)..\..\..\src\%(PixelShader.ProjectRelativeDir), $(ProjectDir)%(PixelShader.RelativeDir) ))"/>
+
+			<PixelShader_tlog
+        Include="%(PixelShader.Outputs_BIN);%(PixelShader.Outputs_JSON);%(PixelShader.Outputs_DXC)"
+        Condition="'%(PixelShader.Outputs_BIN)' != '' and '%(PixelShader.ExcludedFromBuild)' != 'true'">
+				<Source>@(PixelShader, '|')</Source>
+				<Inputs>@(ShaderInclude->'%(Fullpath)', ';')</Inputs>
+			</PixelShader_tlog>
+		</ItemGroup>
+
+		<!--load read/write tlog-->
+		<ReadLinesFromFile File="$(TLogLocation)$(ProjectName).write.1.tlog" >
+			<Output TaskParameter="Lines" ItemName="LinesFromTLog_write"/>
+		</ReadLinesFromFile>
+		<ReadLinesFromFile File="$(TLogLocation)$(ProjectName).read.1.tlog" >
+			<Output TaskParameter="Lines" ItemName="LinesFromTLog_read"/>
+		</ReadLinesFromFile>
+		
+		<!--store read/write tlog content to variables-->
+		<PropertyGroup>
+			<!--read/write tlog content-->
+			<TLog_write>@(LinesFromTLog_write)</TLog_write>
+			<TLog_read>@(LinesFromTLog_read)</TLog_read>
+			
+			<!--new read/write line that will be writen to tlog-->
+			<TLog_writelines>^$(ProjectDir)%(PixelShader_tlog.Source);@(PixelShader_tlog->'%(Fullpath)')</TLog_writelines>
+			<TLog_readlines>^$(ProjectDir)%(PixelShader_tlog.Source);%(PixelShader_tlog.Inputs)</TLog_readlines>
+		</PropertyGroup>
+
+		<!--Save read/write tlog-->
+		<WriteLinesToFile	Condition="'@(PixelShader_tlog)' != '' and '%(PixelShader_tlog.ExcludedFromBuild)' != 'true' and !$(TLog_write.Contains( '$(TLog_writelines)' ) )"
+      File="$(TLogLocation)$(ProjectName).write.1.tlog"
+      Lines="$(TLog_writelines)" />
+		<WriteLinesToFile	Condition="'@(PixelShader_tlog)' != '' and '%(PixelShader_tlog.ExcludedFromBuild)' != 'true' and !$(TLog_read.Contains( '$(TLog_readlines)' ) )"
+      File="$(TLogLocation)$(ProjectName).read.1.tlog"
+      Lines="$(TLog_readlines)" />
+		
+		<!--compile file-->
+		<PixelShader Condition="'@(PixelShader)' != '' and '%(PixelShader.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(PixelShader.CommandLineTemplate_BIN)"
+      Exec="%(PixelShader.Exec_BIN)"
+      ExecArgu="%(PixelShader.ExecArgu_BIN)"
+			Inputs="%(PixelShader.Outputs_JSON)"
+			Outputs="%(PixelShader.Outputs_BIN)"/>
+
+		<!--create output directory and copy from bin\ to outDir\-->
+		<Copy SourceFiles="%(PixelShader.Outputs_BIN)" DestinationFolder="@(AbsolutePath)"/>
+		<Message Importance="High" Text="$(ProjectName).vcxproj -> @(AbsolutePath)%(PixelShader.OutputFileName_BIN)" />
+
+	</Target>
+</Project>

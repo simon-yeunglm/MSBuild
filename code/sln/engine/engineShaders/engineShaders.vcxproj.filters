@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{9d94c323-9040-4167-a97c-ce8cc5df3132}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lighting">
+      <UniqueIdentifier>{c0ba15ca-b67d-45ad-b0c9-88fe3175d036}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <PixelShader Include="..\..\..\src\engine\engineShaders\lighting\gbuffer_normalMap.psh">
+      <Filter>lighting</Filter>
+    </PixelShader>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\src\engine\engineShaders\include\typedef.inl">
+      <Filter>include</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <VertexShader Include="..\..\..\src\engine\engineShaders\lighting\gbuffer_tan_uv0.vsh">
+      <Filter>lighting</Filter>
+    </VertexShader>
+  </ItemGroup>
+</Project>

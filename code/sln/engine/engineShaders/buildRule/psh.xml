@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="clr-namespace:Microsoft.Build.Framework.XamlTypes;assembly=Microsoft.Build.Framework" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="clr-namespace:System;assembly=mscorlib" xmlns:transformCallback="Microsoft.Cpp.Dev10.ConvertPropertyCallback">
+  <ItemType Name="PixelShader" DisplayName="Pixel Shader files" />
+	<ContentType Name="PixelShader" DisplayName="Pixel Shader files" ItemType="PixelShader" />
+	<FileExtension Name=".psh" ContentType="PixelShader" />
+	  
+	<Rule Name="PixelShader" PageTemplate="tool" DisplayName="Pixel Shader" Order="200">
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile" ItemType="PixelShader" />
+    </Rule.DataSource>
+		
+    <Rule.Categories>
+      <Category Name="General">
+        <Category.DisplayName> <sys:String>General</sys:String> </Category.DisplayName>
+      </Category>
+      <Category Name="Command Line" Subtype="CommandLine">
+        <Category.DisplayName> <sys:String>Command Line</sys:String> </Category.DisplayName>
+      </Category>
+    </Rule.Categories>
+		
+    <StringListProperty Name="Inputs" Category="Command Line" IsRequired="true" Switch=" ">
+      <StringListProperty.DataSource>
+        <DataSource Persistence="ProjectFile" ItemType="PixelShader" SourceType="Item" />
+      </StringListProperty.DataSource>
+    </StringListProperty>
+
+		<StringProperty			Name="ProjectRelativeDir"			HelpContext="0"	DisplayName="Project Relative Directory" Description="The relative directory with respect to solution" Visible="False" />
+
+		<StringProperty			Name="ShaderOutputDir"				HelpContext="0" DisplayName="Shader Output Directory"		Description="Shader output directory" Switch="[value]" />
+
+		<StringProperty			Name="OutputFileName"													DisplayName="Output File Name" Visible="False" />
+		<StringListProperty	Name="Outputs"								Category="Command Line" IsRequired="true" />
+		<StringProperty			Name="Exec"										DisplayName="Exec Name"									Description="The compiler exec file" Visible="False" />
+		<StringProperty			Name="ExecArgu"								DisplayName="Exec Arguments"						Description="The arguments for the compiler exec file" Switch="[value]" Visible="False" />
+		<StringProperty			Name="CommandLineTemplate"		DisplayName="Command Line" Visible="False" IncludeInCommandLine="False" />
+
+    <DynamicEnumProperty Name="PixelShaderBeforeTargets" Category="General" EnumProvider="Targets" IncludeInCommandLine="False">
+      <DynamicEnumProperty.DisplayName> <sys:String>Execute Before</sys:String> </DynamicEnumProperty.DisplayName>
+      <DynamicEnumProperty.Description> <sys:String>Specifies the targets for the build customization to run before.</sys:String> </DynamicEnumProperty.Description>
+      <DynamicEnumProperty.ProviderSettings> <NameValuePair Name="Exclude" Value="^PixelShaderBeforeTargets|^Compute" /> </DynamicEnumProperty.ProviderSettings>
+      <DynamicEnumProperty.DataSource> <DataSource Persistence="ProjectFile" HasConfigurationCondition="true" /> </DynamicEnumProperty.DataSource>
+    </DynamicEnumProperty>
+		
+    <DynamicEnumProperty Name="PixelShaderAfterTargets" Category="General" EnumProvider="Targets" IncludeInCommandLine="False">
+      <DynamicEnumProperty.DisplayName> <sys:String>Execute After</sys:String> </DynamicEnumProperty.DisplayName>
+      <DynamicEnumProperty.Description> <sys:String>Specifies the targets for the build customization to run after.</sys:String> </DynamicEnumProperty.Description>
+      <DynamicEnumProperty.ProviderSettings> <NameValuePair Name="Exclude" Value="^PixelShaderAfterTargets|^Compute" /> </DynamicEnumProperty.ProviderSettings>
+      <DynamicEnumProperty.DataSource> <DataSource Persistence="ProjectFile" ItemType="" HasConfigurationCondition="true" /> </DynamicEnumProperty.DataSource>
+    </DynamicEnumProperty>
+		
+    <StringProperty Subtype="AdditionalOptions" Name="AdditionalOptions" Category="Command Line">
+      <StringProperty.DisplayName> <sys:String>Additional Options</sys:String> </StringProperty.DisplayName>
+      <StringProperty.Description> <sys:String>Additional Options</sys:String> </StringProperty.Description>
+    </StringProperty>
+  </Rule>
+</ProjectSchemaDefinitions>
