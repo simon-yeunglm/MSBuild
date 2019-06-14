@@ -1,6 +1,6 @@
 code/bin/
 code/build/
-asset/
+assets/
 *.*~
 .vs
 *.vcxproj.user
